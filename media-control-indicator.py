@@ -3,8 +3,11 @@ import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Playerctl', '1.0')
+gi.require_version('GdkPixbuf', '2.0') 
 from gi.repository import Gtk
-from gi.repository import AppIndicator3, Gio, GLib, GObject, Playerctl
+from colorthief import ColorThief
+import io
+from gi.repository import AppIndicator3, Gdk, Gio, GLib, GObject, Playerctl
 from gi.repository.GdkPixbuf import Pixbuf 
 from urllib.request import urlopen
 import threading
@@ -60,17 +63,36 @@ class media_control_indicator:
     def set_albumArt(self):
         self.player = Playerctl.Player()
         thread = threading.Thread(target=self.getaa)
+        thread2 = threading.Thread(target=self.setbg)
         thread.start()
+        thread2.start()
         return GLib.SOURCE_CONTINUE
         
     def getaa(self):
         try:
             self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"])
+                     
             input_stream = Gio.MemoryInputStream.new_from_data(self.albumartData.read(), None) 
             pixbuf = Pixbuf.new_from_stream(input_stream, None)
             self.albumArt.set_from_pixbuf(pixbuf)
+
+
         except TypeError or URLError:
             self.albumArt.clear()
+            
+    def setbg(self):
+            self.albumartData2 = urlopen(self.player.props.metadata["mpris:artUrl"])   
+            s=io.BytesIO(self.albumartData2.read())
+            color_thief = ColorThief(s)
+            dominant_color = color_thief.get_color(quality=1)
+            color2 = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =1)
+            color = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =0.5)
+            
+            self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
+            self.albumartItem.override_background_color(Gtk.StateFlags.NORMAL, color2)
+            #self.playButton.override_background_color(Gtk.StateFlags.NORMAL, color)
+            #self.previousButton.override_background_color(Gtk.StateFlags.NORMAL, color)
+            #self.nextButton.override_background_color(Gtk.StateFlags.NORMAL, color)
 
     def set_np(self):
         self.player = Playerctl.Player()
