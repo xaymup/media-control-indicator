@@ -7,6 +7,7 @@ Media control indicator is a script written in python that uses AppIndicator3 to
 Useful for a non-DE or window manager only setup as in i3 or awesome.
 
 ## Requirements:
-```
-python-gobject libappindicator-gtk3 playerctl python-urllib3
-```
+* python-gobject
+* libappindicator-gtk3
+* playerctl
+* python-urllib3
