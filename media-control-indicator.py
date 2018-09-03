@@ -34,6 +34,8 @@ class media_control_indicator:
         self.albumArt = Gtk.Image()
         self.albumartItem.add(self.albumArt)
         
+        self.player = Playerctl.Player()
+        
         self.menu.append(self.albumartItem)
         self.menu.append(self.npItem)
         self.menu.append(self.playButton)
@@ -44,13 +46,14 @@ class media_control_indicator:
         GLib.timeout_add_seconds(2,self.set_albumArt)
         GLib.timeout_add_seconds(1,self.set_icon)
         GLib.timeout_add_seconds(1,self.set_buttons)
+        
+
     
         self.menu.show_all()
         
         Gtk.main()
 
     def set_icon(self):
-        self.player = Playerctl.Player()
         self.status = self.player.get_property("status")
         if self.status == "Playing":
             self.indicator.set_icon("/usr/share/icons/Adwaita/32x32/actions/media-playback-start.png")
@@ -61,14 +64,15 @@ class media_control_indicator:
         return GLib.SOURCE_CONTINUE
     
     def set_albumArt(self):
-        self.player = Playerctl.Player()
-        thread = threading.Thread(target=self.getaa)
-        thread2 = threading.Thread(target=self.setbg)
-        thread.start()
-        thread2.start()
+        
+        self.albumartThread = threading.Thread(target=self.get_albumArt)
+        self.backgroundThread = threading.Thread(target=self.setbg)
+        
+        self.albumartThread.start()
+        self.backgroundThread.start()
         return GLib.SOURCE_CONTINUE
         
-    def getaa(self):
+    def get_albumArt(self):
         try:
             self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"])
                      
@@ -81,9 +85,10 @@ class media_control_indicator:
             self.albumArt.clear()
             
     def setbg(self):
-            self.albumartData2 = urlopen(self.player.props.metadata["mpris:artUrl"])   
-            s=io.BytesIO(self.albumartData2.read())
-            color_thief = ColorThief(s)
+        try:
+            self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"])   
+            self.albumartStream=io.BytesIO(self.albumartData.read())
+            color_thief = ColorThief(self.albumartStream)
             dominant_color = color_thief.get_color(quality=1)
             color2 = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =1)
             color = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =0.5)
@@ -93,9 +98,10 @@ class media_control_indicator:
             #self.playButton.override_background_color(Gtk.StateFlags.NORMAL, color)
             #self.previousButton.override_background_color(Gtk.StateFlags.NORMAL, color)
             #self.nextButton.override_background_color(Gtk.StateFlags.NORMAL, color)
+        except TypeError or URLError:
+            pass
 
     def set_np(self):
-        self.player = Playerctl.Player()
         self.status = self.player.get_property("status")
         try:
             self.npItem.set_label("%s\n%s\n%s" % (self.player.get_title(),self.player.get_album(),self.player.get_artist()))
@@ -127,14 +133,11 @@ class media_control_indicator:
 
         
     def mediaPlay(self, Widget):
-        self.player = Playerctl.Player()
         self.player.play_pause()
         
     def mediaPrevious(self, Widget):
-        self.player = Playerctl.Player()
         self.player.previous()
     def mediaNext(self, Widget):
-        self.player = Playerctl.Player()
         self.player.next()
         
 if __name__ == "__main__":
