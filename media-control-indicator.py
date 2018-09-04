@@ -65,8 +65,8 @@ class media_control_indicator:
     
     def set_albumArt(self):
         
-        self.albumartThread = threading.Thread(target=self.get_albumArt, daemon = True)
-        self.backgroundThread = threading.Thread(target=self.setbg, daemon=True)
+        self.albumartThread = threading.Thread(target=self.get_albumArt)
+        self.backgroundThread = threading.Thread(target=self.setbg)
         self.albumartThread.start()
         self.backgroundThread.start()
         
@@ -86,6 +86,7 @@ class media_control_indicator:
             #self.albumArt.clear()
             GObject.idle_add(self.clearImage)
             pass
+        return
             
     def updateaImage(self, pix):
         self.albumArt.set_from_pixbuf(pix)
@@ -111,6 +112,7 @@ class media_control_indicator:
             #self.nextButton.override_background_color(Gtk.StateFlags.NORMAL, color)
         except TypeError or URLError:
             pass
+        return
         
     def updateBG(self, color, color2):
         self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
