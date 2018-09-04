@@ -11,6 +11,7 @@ from gi.repository import AppIndicator3, Gdk, Gio, GLib, GObject, Playerctl
 from gi.repository.GdkPixbuf import Pixbuf 
 from urllib.request import urlopen
 import threading
+import gc
 
 
 class media_control_indicator:
@@ -46,6 +47,7 @@ class media_control_indicator:
         GLib.timeout_add_seconds(2,self.set_albumArt)
         GLib.timeout_add_seconds(1,self.set_icon)
         GLib.timeout_add_seconds(1,self.set_buttons)
+        GLib.timeout_add_seconds(60,self.releaseMem)
         
 
     
@@ -62,6 +64,11 @@ class media_control_indicator:
         else: 
             self.indicator.set_icon("/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png")
         return GLib.SOURCE_CONTINUE
+    
+    def releaseMem(self):
+        gc.collect()
+        return GLib.SOURCE_CONTINUE
+
     
     def set_albumArt(self):
         
