@@ -65,11 +65,12 @@ class media_control_indicator:
     
     def set_albumArt(self):
         
-        self.albumartThread = threading.Thread(target=self.get_albumArt)
-        self.backgroundThread = threading.Thread(target=self.setbg)
-        
+        self.albumartThread = threading.Thread(target=self.get_albumArt, daemon = True)
+        self.backgroundThread = threading.Thread(target=self.setbg, daemon=True)
         self.albumartThread.start()
         self.backgroundThread.start()
+        
+        
         return GLib.SOURCE_CONTINUE
         
     def get_albumArt(self):
@@ -78,11 +79,21 @@ class media_control_indicator:
                      
             input_stream = Gio.MemoryInputStream.new_from_data(self.albumartData.read(), None) 
             pixbuf = Pixbuf.new_from_stream(input_stream, None)
-            self.albumArt.set_from_pixbuf(pixbuf)
-
+            GObject.idle_add(self.updateaImage, pixbuf)
+            #self.albumArt.set_from_pixbuf(pixbuf)
 
         except TypeError or URLError:
-            self.albumArt.clear()
+            #self.albumArt.clear()
+            GObject.idle_add(self.clearImage)
+            pass
+            
+    def updateaImage(self, pix):
+        self.albumArt.set_from_pixbuf(pix)
+        self.menu.reposition()
+        
+    def clearImage(self):
+        self.albumArt.clear()
+
             
     def setbg(self):
         try:
@@ -92,14 +103,18 @@ class media_control_indicator:
             dominant_color = color_thief.get_color(quality=1)
             color2 = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =1)
             color = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =0.5)
+            GObject.idle_add(self.updateBG(color, color2))
             
-            self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
-            self.albumartItem.override_background_color(Gtk.StateFlags.NORMAL, color2)
+
             #self.playButton.override_background_color(Gtk.StateFlags.NORMAL, color)
             #self.previousButton.override_background_color(Gtk.StateFlags.NORMAL, color)
             #self.nextButton.override_background_color(Gtk.StateFlags.NORMAL, color)
         except TypeError or URLError:
             pass
+        
+    def updateBG(self, color, color2):
+        self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
+        self.albumartItem.override_background_color(Gtk.StateFlags.NORMAL, color2)
 
     def set_np(self):
         self.status = self.player.get_property("status")
