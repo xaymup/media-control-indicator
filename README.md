@@ -11,3 +11,4 @@ Useful for a non-DE or window manager only setup as in i3 or awesome.
 * libappindicator-gtk3
 * playerctl
 * python-urllib3
+* adwaita-icon-theme

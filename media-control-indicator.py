@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# Media-Control-Indicator
+# Author: Mohamed Alaa <m-alaa8@ubuntu.com>
 from gi.repository import Gtk
 from colorthief import ColorThief
 import io
@@ -47,7 +49,7 @@ class media_control_indicator (Gtk.Application):
         
         self.menu.show_all()
         Gtk.main()
-        
+
     def collect_garbage(self):
         gc.collect()
         return GLib.SOURCE_CONTINUE
@@ -143,6 +145,7 @@ class media_control_indicator (Gtk.Application):
         
     def mediaPrevious(self, Widget):
         self.player.previous()
+        
     def mediaNext(self, Widget):
         self.player.next()
         
