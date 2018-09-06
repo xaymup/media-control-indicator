@@ -1,9 +1,4 @@
 #!/usr/bin/python
-import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('AppIndicator3', '0.1')
-gi.require_version('Playerctl', '1.0')
-gi.require_version('GdkPixbuf', '2.0') 
 from gi.repository import Gtk
 from colorthief import ColorThief
 import io
@@ -13,8 +8,7 @@ from urllib.request import urlopen
 import threading
 import gc
 
-
-class media_control_indicator:
+class media_control_indicator (Gtk.Application):
     def __init__ (self):
         self.indicator = AppIndicator3.Indicator.new("media_control_indicator", "/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png", AppIndicator3.IndicatorCategory.SYSTEM_SERVICES)
         self.indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
@@ -36,7 +30,7 @@ class media_control_indicator:
         self.albumartItem.add(self.albumArt)
         
         self.player = Playerctl.Player()
-        
+                
         self.menu.append(self.albumartItem)
         self.menu.append(self.npItem)
         self.menu.append(self.playButton)
@@ -44,17 +38,28 @@ class media_control_indicator:
         self.menu.append(self.nextButton)
         
         GLib.timeout_add_seconds(1,self.set_np)
-        GLib.timeout_add_seconds(2,self.set_albumArt)
         GLib.timeout_add_seconds(1,self.set_icon)
         GLib.timeout_add_seconds(1,self.set_buttons)
-        GLib.timeout_add_seconds(60,self.releaseMem)
+        GLib.timeout_add_seconds(1,self.player_handler)
+        GLib.timeout_add_seconds(30,self.collect_garbage)
         
-
-    
+        self.update_album_art(None, None)
+        
         self.menu.show_all()
-        
         Gtk.main()
-
+        
+    def collect_garbage(self):
+        gc.collect()
+        return GLib.SOURCE_CONTINUE
+        
+    def player_handler(self):
+        try:
+            self.player.on('metadata',self.update_album_art)
+        except GLib.Error:
+            GLib.idle_add(self.clear_album_art)
+            pass
+        return GLib.SOURCE_CONTINUE
+    
     def set_icon(self):
         self.status = self.player.get_property("status")
         if self.status == "Playing":
@@ -65,63 +70,42 @@ class media_control_indicator:
             self.indicator.set_icon("/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png")
         return GLib.SOURCE_CONTINUE
     
-    def releaseMem(self):
-        gc.collect()
-        return GLib.SOURCE_CONTINUE
-
+    def update_album_art(self, args, widget):
+        self.getalbumartThread = threading.Thread(target=self.get_album_art)
+        self.getalbumartThread.start()        
+        
+    def get_album_art(self):
+        try:
+            self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"]).read()
+            self.setbgThread = threading.Thread(target=self.set_bg)
+            self.setalbumartThread = threading.Thread(target=self.set_albumart)
+            self.setbgThread.start()
+            self.setalbumartThread.start()
+        except TypeError or URLError:
+            GLib.idle_add(self.clear_album_art)
     
-    def set_albumArt(self):
+    def set_albumart(self):
+        inputStream = Gio.MemoryInputStream.new_from_data(self.albumartData, None) 
+        pixbuf = Pixbuf.new_from_stream(inputStream, None)
+        GLib.idle_add(self.apply_albumart, pixbuf)
         
-        self.albumartThread = threading.Thread(target=self.get_albumArt)
-        self.backgroundThread = threading.Thread(target=self.setbg)
-        self.albumartThread.start()
-        self.backgroundThread.start()
+    def apply_albumart(self, pixbuf):
+        self.albumArt.set_from_pixbuf(pixbuf)
+        return False
         
-        
-        return GLib.SOURCE_CONTINUE
-        
-    def get_albumArt(self):
-        try:
-            self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"])
-                     
-            input_stream = Gio.MemoryInputStream.new_from_data(self.albumartData.read(), None) 
-            pixbuf = Pixbuf.new_from_stream(input_stream, None)
-            GObject.idle_add(self.updateaImage, pixbuf)
-            #self.albumArt.set_from_pixbuf(pixbuf)
-
-        except TypeError or URLError:
-            #self.albumArt.clear()
-            GObject.idle_add(self.clearImage)
-            pass
-        return
-            
-    def updateaImage(self, pix):
-        self.albumArt.set_from_pixbuf(pix)
-        self.menu.reposition()
-        
-    def clearImage(self):
+    def clear_album_art(self):
         self.albumArt.clear()
-
+        return False
             
-    def setbg(self):
-        try:
-            self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"])   
-            self.albumartStream=io.BytesIO(self.albumartData.read())
-            color_thief = ColorThief(self.albumartStream)
-            dominant_color = color_thief.get_color(quality=1)
-            color2 = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =1)
-            color = Gdk.RGBA(red = (dominant_color[0])/255*1, green = (dominant_color[1])/255*1, blue = (dominant_color[2])/255*1, alpha =0.5)
-            GObject.idle_add(self.updateBG(color, color2))
-            
-
-            #self.playButton.override_background_color(Gtk.StateFlags.NORMAL, color)
-            #self.previousButton.override_background_color(Gtk.StateFlags.NORMAL, color)
-            #self.nextButton.override_background_color(Gtk.StateFlags.NORMAL, color)
-        except TypeError or URLError:
-            pass
-        return
+    def set_bg(self):
         
-    def updateBG(self, color, color2):
+        self.albumartStream=io.BytesIO(self.albumartData)
+        dominantColor = ColorThief(self.albumartStream).get_color(quality=1)
+        color2 = Gdk.RGBA(red = (dominantColor[0])/255*1, green = (dominantColor[1])/255*1, blue = (dominantColor[2])/255*1, alpha =1)
+        color = Gdk.RGBA(red = (dominantColor[0])/255*1, green = (dominantColor[1])/255*1, blue = (dominantColor[2])/255*1, alpha =0.5)
+        GLib.idle_add(self.apply_bg, color, color2)
+        
+    def apply_bg(self, color, color2):
         self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
         self.albumartItem.override_background_color(Gtk.StateFlags.NORMAL, color2)
 
@@ -136,7 +120,6 @@ class media_control_indicator:
     def set_buttons(self):
         self.player = Playerctl.Player()
         self.status = self.player.get_property("status")
-        
         if self.status == "Playing":
             self.playButton.set_sensitive(True)
             self.nextButton.set_sensitive(True)
@@ -154,7 +137,6 @@ class media_control_indicator:
             self.nextButton.set_sensitive(False)
             self.previousButton.set_sensitive(False)
         return GLib.SOURCE_CONTINUE
-
         
     def mediaPlay(self, Widget):
         self.player.play_pause()
