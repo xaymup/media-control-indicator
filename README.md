@@ -17,7 +17,7 @@ Useful for a non-DE or window manager only setup as in i3 or awesome.
 ## Arch Linux Install:
 Media-control-indicator is avaliable on AUR: https://aur.archlinux.org/packages/media-control-indicator-git
 to install you can simply run:
-```yaourt -S media-control-indicator-git```
+```$ yaourt -S media-control-indicator-git```
 
 ## Usage:
 ```$ media-control-indicator```
