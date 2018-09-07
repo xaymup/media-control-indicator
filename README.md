@@ -13,3 +13,8 @@ Useful for a non-DE or window manager only setup as in i3 or awesome.
 * python-urllib3
 * adwaita-icon-theme
 * python-colorthief
+
+## Arch Linux Install:
+Media-control-indicator is avaliable on AUR: https://aur.archlinux.org/packages/media-control-indicator-git
+to install you can simply run:
+```yaourt -S media-control-indicator-git```
