@@ -12,3 +12,4 @@ Useful for a non-DE or window manager only setup as in i3 or awesome.
 * playerctl
 * python-urllib3
 * adwaita-icon-theme
+* python-colorthief
