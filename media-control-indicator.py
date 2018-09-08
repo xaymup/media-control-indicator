@@ -126,24 +126,24 @@ class media_control_indicator (Gtk.Application):
             self.playButton.set_sensitive(True)
             self.nextButton.set_sensitive(True)
             self.previousButton.set_sensitive(True)
-            self.npItem.set_sensitive(True)
-            self.albumartItem.set_sensitive(True)
+            self.npItem.show()
+            self.albumartItem.show()
             self.playButton.set_label("Pause")
             self.playButton.set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE))
         elif self.status == "Paused":
             self.playButton.set_sensitive(True)
             self.nextButton.set_sensitive(True)
             self.previousButton.set_sensitive(True)
-            self.npItem.set_sensitive(True)
-            self.albumartItem.set_sensitive(True)
+            self.npItem.show()
+            self.albumartItem.show()
             self.playButton.set_label("Play")
             self.playButton.set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
         else: 
             self.playButton.set_sensitive(False)
             self.nextButton.set_sensitive(False)
             self.previousButton.set_sensitive(False)
-            self.npItem.set_sensitive(False)
-            self.albumartItem.set_sensitive(False)
+            self.npItem.hide()
+            self.albumartItem.hide()
         return GLib.SOURCE_CONTINUE
         
     def mediaPlay(self, Widget):
