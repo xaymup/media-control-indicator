@@ -1,10 +1,8 @@
 #!/usr/bin/python
-# Media-Control-Indicator
 # Author: Mohamed Alaa <m-alaa8@ubuntu.com>
-from gi.repository import Gtk
 from colorthief import ColorThief
 import io
-from gi.repository import AppIndicator3, Gdk, Gio, GLib, Playerctl
+from gi.repository import Gtk, AppIndicator3, Gdk, Gio, GLib, Playerctl
 from gi.repository.GdkPixbuf import Pixbuf 
 from urllib.request import urlopen
 import threading
@@ -83,7 +81,7 @@ class media_control_indicator (Gtk.Application):
             self.setbgThread.start()
             self.setalbumartThread.start()
             self.albumartItem.show()
-        except (TypeError, KeyError) as e:
+        except (TypeError, KeyError, urllib.error.URLError) as e:
             self.albumartItem.hide()
     def set_albumart(self):
         inputStream = Gio.MemoryInputStream.new_from_data(self.albumartData, None) 
@@ -95,7 +93,6 @@ class media_control_indicator (Gtk.Application):
         return False
 
     def set_bg(self):
-        
         self.albumartStream=io.BytesIO(self.albumartData)
         dominantColor = ColorThief(self.albumartStream).get_color(quality=1)
         color2 = Gdk.RGBA(red = (dominantColor[0])/255*1, green = (dominantColor[1])/255*1, blue = (dominantColor[2])/255*1, alpha =1)
