@@ -4,7 +4,7 @@ from colorthief import ColorThief
 import io
 from gi.repository import Gtk, AppIndicator3, Gdk, Gio, GLib, Playerctl
 from gi.repository.GdkPixbuf import Pixbuf 
-from urllib.request import urlopen
+import urllib.request
 import threading
 import gc
 
@@ -56,6 +56,8 @@ class media_control_indicator (Gtk.Application):
         try:
             self.player.on('metadata',self.update_album_art)
         except GLib.Error:
+            self.menu.set_size_request(0,0)
+            self.menu.reposition()
             pass
         return GLib.SOURCE_CONTINUE
     
@@ -75,14 +77,15 @@ class media_control_indicator (Gtk.Application):
         
     def get_album_art(self):
         try:
-            self.albumartData = urlopen(self.player.props.metadata["mpris:artUrl"]).read()
+            self.albumartData = urllib.request.urlopen(self.player.props.metadata["mpris:artUrl"]).read()
             self.setbgThread = threading.Thread(target=self.set_bg)
             self.setalbumartThread = threading.Thread(target=self.set_albumart)
             self.setbgThread.start()
             self.setalbumartThread.start()
             self.albumartItem.show()
-        except (TypeError, KeyError, urllib.error.URLError) as e:
+        except (TypeError, KeyError, urllib.request.URLError) as e:
             self.albumartItem.hide()
+
     def set_albumart(self):
         inputStream = Gio.MemoryInputStream.new_from_data(self.albumartData, None) 
         pixbuf = Pixbuf.new_from_stream(inputStream, None)
@@ -90,6 +93,8 @@ class media_control_indicator (Gtk.Application):
         
     def apply_albumart(self, pixbuf):
         self.albumArt.set_from_pixbuf(pixbuf)
+        self.menu.set_size_request(0,320)
+        self.menu.reposition()
         return False
 
     def set_bg(self):
