@@ -4,7 +4,7 @@
 from gi.repository import Gtk
 from colorthief import ColorThief
 import io
-from gi.repository import AppIndicator3, Gdk, Gio, GLib, GObject, Playerctl
+from gi.repository import AppIndicator3, Gdk, Gio, GLib, Playerctl
 from gi.repository.GdkPixbuf import Pixbuf 
 from urllib.request import urlopen
 import threading
@@ -19,7 +19,7 @@ class media_control_indicator (Gtk.Application):
         self.indicator.set_menu(self.menu)
         
         self.albumartItem = Gtk.MenuItem()
-        self.npItem = Gtk.MenuItem("")
+        self.npItem = Gtk.MenuItem()
         self.playButton = Gtk.ImageMenuItem("Play",image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
         self.previousButton = Gtk.ImageMenuItem("Previous",image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS))
         self.nextButton = Gtk.ImageMenuItem("Next",image=Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT))
@@ -58,7 +58,6 @@ class media_control_indicator (Gtk.Application):
         try:
             self.player.on('metadata',self.update_album_art)
         except GLib.Error:
-            GLib.idle_add(self.clear_album_art)
             pass
         return GLib.SOURCE_CONTINUE
     
@@ -83,9 +82,9 @@ class media_control_indicator (Gtk.Application):
             self.setalbumartThread = threading.Thread(target=self.set_albumart)
             self.setbgThread.start()
             self.setalbumartThread.start()
-        except TypeError or URLError:
-            GLib.idle_add(self.clear_album_art)
-
+            self.albumartItem.show()
+        except (TypeError, KeyError) as e:
+            self.albumartItem.hide()
     def set_albumart(self):
         inputStream = Gio.MemoryInputStream.new_from_data(self.albumartData, None) 
         pixbuf = Pixbuf.new_from_stream(inputStream, None)
@@ -94,11 +93,7 @@ class media_control_indicator (Gtk.Application):
     def apply_albumart(self, pixbuf):
         self.albumArt.set_from_pixbuf(pixbuf)
         return False
-        
-    def clear_album_art(self):
-        self.albumArt.clear()
-        return False
-            
+
     def set_bg(self):
         
         self.albumartStream=io.BytesIO(self.albumartData)
@@ -112,11 +107,14 @@ class media_control_indicator (Gtk.Application):
         self.albumartItem.override_background_color(Gtk.StateFlags.NORMAL, color2)
 
     def set_np(self):
-        self.status = self.player.get_property("status")
         try:
             self.npItem.set_label("%s\n%s\n%s" % (self.player.get_title(),self.player.get_album(),self.player.get_artist()))
+            if self.npItem.get_label().isspace() == False:
+                self.npItem.show()
+            else:
+                self.npItem.hide()
         except GLib.Error:
-            self.npItem.set_label("")
+            pass
         return GLib.SOURCE_CONTINUE
         
     def set_buttons(self):
@@ -126,16 +124,12 @@ class media_control_indicator (Gtk.Application):
             self.playButton.set_sensitive(True)
             self.nextButton.set_sensitive(True)
             self.previousButton.set_sensitive(True)
-            self.npItem.show()
-            self.albumartItem.show()
             self.playButton.set_label("Pause")
             self.playButton.set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE))
         elif self.status == "Paused":
             self.playButton.set_sensitive(True)
             self.nextButton.set_sensitive(True)
             self.previousButton.set_sensitive(True)
-            self.npItem.show()
-            self.albumartItem.show()
             self.playButton.set_label("Play")
             self.playButton.set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
         else: 
