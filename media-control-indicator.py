@@ -3,7 +3,7 @@
 from colorthief import ColorThief
 import io
 from gi.repository import Gtk, AppIndicator3, Gdk, Gio, GLib, Playerctl
-from gi.repository.GdkPixbuf import Pixbuf 
+from gi.repository.GdkPixbuf import Pixbuf,  InterpType
 import urllib.request
 import threading
 import gc
@@ -89,6 +89,7 @@ class media_control_indicator (Gtk.Application):
     def set_albumart(self):
         inputStream = Gio.MemoryInputStream.new_from_data(self.albumartData, None) 
         pixbuf = Pixbuf.new_from_stream(inputStream, None)
+        pixbuf = pixbuf.scale_simple(180, 180, InterpType.BILINEAR)
         GLib.idle_add(self.apply_albumart, pixbuf)
         
     def apply_albumart(self, pixbuf):
