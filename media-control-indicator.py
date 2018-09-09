@@ -116,6 +116,8 @@ class media_control_indicator (Gtk.Application):
                 self.npItem.show()
             else:
                 self.npItem.hide()
+                self.menu.set_size_request(0,0)
+                self.menu.reposition()
         except GLib.Error:
             pass
         return GLib.SOURCE_CONTINUE
