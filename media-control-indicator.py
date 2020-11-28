@@ -149,7 +149,7 @@ class media_control_indicator (Gtk.Application):
                 self.player.get_album(),
                 self.player.get_artist(),
             ))
-            if self.npItem.get_label().isspace() == False:
+            if not self.npItem.get_label().isspace():
                 self.npItem.show()
             else:
                 self.npItem.hide()
