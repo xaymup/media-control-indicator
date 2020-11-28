@@ -43,6 +43,9 @@ class MediaControlIndicator(Gtk.Application):
         self.previous_button.connect('activate', self.media_previous)
         self.next_button.connect('activate', self.media_next)
 
+        # Toggle play / pause on middle click
+        self.indicator.set_secondary_activate_target(self.play_button)
+
         self.album_art = Gtk.Image()
         self.albumart_item.add(self.album_art)
 
