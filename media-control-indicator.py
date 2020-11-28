@@ -28,14 +28,14 @@ class MediaControlIndicator(Gtk.Application):
         self.albumart_item = Gtk.MenuItem()
         self.np_item = Gtk.MenuItem()
         self.play_button = Gtk.ImageMenuItem(
-            'Play',
+            label='Play',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
         self.previous_button = Gtk.ImageMenuItem(
-            'Previous',
+            label='Previous',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS),
         )
         self.next_button = Gtk.ImageMenuItem(
-            'Next',
+            label='Next',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT),
         )
 
