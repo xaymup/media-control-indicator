@@ -10,7 +10,7 @@ from gi.repository import AppIndicator3, Gdk, Gio, GLib, Gtk, Playerctl
 from gi.repository.GdkPixbuf import InterpType, Pixbuf
 
 
-class media_control_indicator (Gtk.Application):
+class MediaControlIndicator(Gtk.Application):
     def __init__(self):
         self.status = None
         self.albumartData = None
@@ -193,6 +193,7 @@ class media_control_indicator (Gtk.Application):
     def mediaNext(self, *args, **kwargs):
         self.player.next()
 
+
 if __name__ == '__main__':
-    imc = media_control_indicator()
+    imc = MediaControlIndicator()
     imc.main()
