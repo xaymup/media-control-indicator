@@ -5,7 +5,13 @@ import io
 import threading
 import urllib.request
 
+import gi
 from colorthief import ColorThief
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('AppIndicator3', '0.1')
+gi.require_version('Playerctl', '2.0')
+
 from gi.repository import AppIndicator3, Gdk, Gio, GLib, Gtk, Playerctl
 from gi.repository.GdkPixbuf import InterpType, Pixbuf
 
