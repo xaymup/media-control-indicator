@@ -89,18 +89,15 @@ class MediaControlIndicator(Gtk.Application):
         return GLib.SOURCE_CONTINUE
 
     def update_album_art(self, *args, **kwargs):
-        self.getalbumartThread = threading.Thread(target=self.get_album_art)
-        self.getalbumartThread.start()
+        threading.Thread(target=self.get_album_art).start()
 
     def get_album_art(self):
         try:
             self.albumartData = urllib \
                 .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
                 .read()
-            self.setbgThread = threading.Thread(target=self.set_bg)
-            self.setalbumartThread = threading.Thread(target=self.set_albumart)
-            self.setbgThread.start()
-            self.setalbumartThread.start()
+            threading.Thread(target=self.set_bg).start()
+            threading.Thread(target=self.set_albumart).start()
             self.albumartItem.show()
         except (TypeError, KeyError, urllib.request.URLError) as e:
             self.albumartItem.hide()
