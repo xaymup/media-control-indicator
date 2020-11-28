@@ -73,7 +73,6 @@ class media_control_indicator (Gtk.Application):
         except GLib.Error:
             self.menu.set_size_request(0, 0)
             self.menu.reposition()
-            pass
         return GLib.SOURCE_CONTINUE
 
     def set_icon(self):
