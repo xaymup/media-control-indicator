@@ -119,8 +119,8 @@ class media_control_indicator (Gtk.Application):
         return False
 
     def set_bg(self):
-        self.albumartStream = io.BytesIO(self.albumartData)
-        dominantColor = ColorThief(self.albumartStream).get_color(quality=1)
+        albumartStream = io.BytesIO(self.albumartData)
+        dominantColor = ColorThief(albumartStream).get_color(quality=1)
         color2 = Gdk.RGBA(
             red=(dominantColor[0]) / 255 * 1,
             green=(dominantColor[1]) / 255 * 1,
