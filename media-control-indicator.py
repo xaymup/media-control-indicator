@@ -84,11 +84,11 @@ class MediaControlIndicator(Gtk.Application):
     def set_icon(self):
         self.status = self.player.get_property('status')
         if self.status == 'Playing':
-            self.indicator.set_icon('media-playback-start')
+            self.indicator.set_icon_full('media-playback-start', 'Playing')
         elif self.status == 'Paused':
-            self.indicator.set_icon('media-playback-pause')
+            self.indicator.set_icon_full('media-playback-pause', 'Paused')
         else:
-            self.indicator.set_icon('media-playback-stop')
+            self.indicator.set_icon_full('media-playback-stop', 'Stopped')
         return GLib.SOURCE_CONTINUE
 
     def update_album_art(self, *args, **kwargs):
