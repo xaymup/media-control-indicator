@@ -62,7 +62,8 @@ class media_control_indicator (Gtk.Application):
         self.menu.show_all()
         Gtk.main()
 
-    def collect_garbage(self):
+    @staticmethod
+    def collect_garbage():
         gc.collect()
         return GLib.SOURCE_CONTINUE
 
