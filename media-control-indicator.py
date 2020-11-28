@@ -12,6 +12,9 @@ from gi.repository.GdkPixbuf import InterpType, Pixbuf
 
 class media_control_indicator (Gtk.Application):
     def __init__(self):
+        self.status = None
+        self.albumartData = None
+
         self.indicator = AppIndicator3.Indicator.new(
             'media_control_indicator',
             'media-playback-stop',
