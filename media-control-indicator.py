@@ -14,7 +14,7 @@ class media_control_indicator (Gtk.Application):
     def __init__(self):
         self.indicator = AppIndicator3.Indicator.new(
             'media_control_indicator',
-            '/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png',
+            'media-playback-stop',
             AppIndicator3.IndicatorCategory.SYSTEM_SERVICES,
         )
         self.indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
@@ -78,11 +78,11 @@ class media_control_indicator (Gtk.Application):
     def set_icon(self):
         self.status = self.player.get_property('status')
         if self.status == 'Playing':
-            self.indicator.set_icon('/usr/share/icons/Adwaita/32x32/actions/media-playback-start.png')
+            self.indicator.set_icon('media-playback-start')
         elif self.status == 'Paused':
-            self.indicator.set_icon('/usr/share/icons/Adwaita/32x32/actions/media-playback-pause.png')
+            self.indicator.set_icon('media-playback-pause')
         else:
-            self.indicator.set_icon('/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png')
+            self.indicator.set_icon('media-playback-stop')
         return GLib.SOURCE_CONTINUE
 
     def update_album_art(self, args, widget):
