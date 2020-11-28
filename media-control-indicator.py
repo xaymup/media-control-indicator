@@ -99,7 +99,7 @@ class MediaControlIndicator(Gtk.Application):
             threading.Thread(target=self.set_bg).start()
             threading.Thread(target=self.set_albumart).start()
             self.albumartItem.show()
-        except (TypeError, KeyError, urllib.request.URLError) as e:
+        except (TypeError, KeyError, urllib.request.URLError):
             self.albumartItem.hide()
 
     def set_albumart(self):
