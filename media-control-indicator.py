@@ -13,7 +13,7 @@ from gi.repository.GdkPixbuf import InterpType, Pixbuf
 class MediaControlIndicator(Gtk.Application):
     def __init__(self):
         self.status = None
-        self.albumartData = None
+        self.albumart_data = None
 
         self.indicator = AppIndicator3.Indicator.new(
             'media_control_indicator',
@@ -25,34 +25,34 @@ class MediaControlIndicator(Gtk.Application):
         self.menu = Gtk.Menu()
         self.indicator.set_menu(self.menu)
 
-        self.albumartItem = Gtk.MenuItem()
-        self.npItem = Gtk.MenuItem()
-        self.playButton = Gtk.ImageMenuItem(
+        self.albumart_item = Gtk.MenuItem()
+        self.np_item = Gtk.MenuItem()
+        self.play_button = Gtk.ImageMenuItem(
             'Play',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
-        self.previousButton = Gtk.ImageMenuItem(
+        self.previous_button = Gtk.ImageMenuItem(
             'Previous',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS),
         )
-        self.nextButton = Gtk.ImageMenuItem(
+        self.next_button = Gtk.ImageMenuItem(
             'Next',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT),
         )
 
-        self.playButton.connect('activate', self.mediaPlay)
-        self.previousButton.connect('activate', self.mediaPrevious)
-        self.nextButton.connect('activate', self.mediaNext)
+        self.play_button.connect('activate', self.media_play)
+        self.previous_button.connect('activate', self.media_previous)
+        self.next_button.connect('activate', self.media_next)
 
-        self.albumArt = Gtk.Image()
-        self.albumartItem.add(self.albumArt)
+        self.album_art = Gtk.Image()
+        self.albumart_item.add(self.album_art)
 
         self.player = Playerctl.Player()
 
-        self.menu.append(self.albumartItem)
-        self.menu.append(self.npItem)
-        self.menu.append(self.playButton)
-        self.menu.append(self.previousButton)
-        self.menu.append(self.nextButton)
+        self.menu.append(self.albumart_item)
+        self.menu.append(self.np_item)
+        self.menu.append(self.play_button)
+        self.menu.append(self.previous_button)
+        self.menu.append(self.next_button)
 
         GLib.timeout_add_seconds(1, self.set_np)
         GLib.timeout_add_seconds(1, self.set_icon)
@@ -93,30 +93,30 @@ class MediaControlIndicator(Gtk.Application):
 
     def get_album_art(self):
         try:
-            self.albumartData = urllib \
+            self.albumart_data = urllib \
                 .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
                 .read()
             threading.Thread(target=self.set_bg).start()
             threading.Thread(target=self.set_albumart).start()
-            self.albumartItem.show()
+            self.albumart_item.show()
         except (TypeError, KeyError, urllib.request.URLError):
-            self.albumartItem.hide()
+            self.albumart_item.hide()
 
     def set_albumart(self):
         inputStream = Gio.MemoryInputStream \
-            .new_from_data(self.albumartData, None)
+            .new_from_data(self.albumart_data, None)
         pixbuf = Pixbuf.new_from_stream(inputStream, None)
         pixbuf = pixbuf.scale_simple(180, 180, InterpType.BILINEAR)
         GLib.idle_add(self.apply_albumart, pixbuf)
 
     def apply_albumart(self, pixbuf):
-        self.albumArt.set_from_pixbuf(pixbuf)
+        self.album_art.set_from_pixbuf(pixbuf)
         self.menu.set_size_request(0, 320)
         self.menu.reposition()
         return False
 
     def set_bg(self):
-        albumartStream = io.BytesIO(self.albumartData)
+        albumartStream = io.BytesIO(self.albumart_data)
         dominantColor = ColorThief(albumartStream).get_color(quality=1)
         color2 = Gdk.RGBA(
             red=(dominantColor[0]) / 255 * 1,
@@ -133,23 +133,23 @@ class MediaControlIndicator(Gtk.Application):
         GLib.idle_add(self.apply_bg, color, color2)
 
     def apply_bg(self, color, color2):
-        self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
-        self.albumartItem.override_background_color(
+        self.np_item.override_background_color(Gtk.StateFlags.NORMAL, color)
+        self.albumart_item.override_background_color(
             Gtk.StateFlags.NORMAL,
             color2,
         )
 
     def set_np(self):
         try:
-            self.npItem.set_label('%s\n%s\n%s' % (
+            self.np_item.set_label('%s\n%s\n%s' % (
                 self.player.get_title(),
                 self.player.get_album(),
                 self.player.get_artist(),
             ))
-            if not self.npItem.get_label().isspace():
-                self.npItem.show()
+            if not self.np_item.get_label().isspace():
+                self.np_item.show()
             else:
-                self.npItem.hide()
+                self.np_item.hide()
                 self.menu.set_size_request(0, 0)
                 self.menu.reposition()
         except GLib.Error:
@@ -160,34 +160,34 @@ class MediaControlIndicator(Gtk.Application):
         self.player = Playerctl.Player()
         self.status = self.player.get_property('status')
         if self.status == 'Playing':
-            self.playButton.set_sensitive(True)
-            self.nextButton.set_sensitive(True)
-            self.previousButton.set_sensitive(True)
-            self.playButton.set_label('Pause')
-            self.playButton \
+            self.play_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.previous_button.set_sensitive(True)
+            self.play_button.set_label('Pause')
+            self.play_button \
                 .set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE))
         elif self.status == 'Paused':
-            self.playButton.set_sensitive(True)
-            self.nextButton.set_sensitive(True)
-            self.previousButton.set_sensitive(True)
-            self.playButton.set_label('Play')
-            self.playButton \
+            self.play_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.previous_button.set_sensitive(True)
+            self.play_button.set_label('Play')
+            self.play_button \
                 .set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
         else:
-            self.playButton.set_sensitive(False)
-            self.nextButton.set_sensitive(False)
-            self.previousButton.set_sensitive(False)
-            self.npItem.hide()
-            self.albumartItem.hide()
+            self.play_button.set_sensitive(False)
+            self.next_button.set_sensitive(False)
+            self.previous_button.set_sensitive(False)
+            self.np_item.hide()
+            self.albumart_item.hide()
         return GLib.SOURCE_CONTINUE
 
-    def mediaPlay(self, *args, **kwargs):
+    def media_play(self, *args, **kwargs):
         self.player.play_pause()
 
-    def mediaPrevious(self, *args, **kwargs):
+    def media_previous(self, *args, **kwargs):
         self.player.previous()
 
-    def mediaNext(self, *args, **kwargs):
+    def media_next(self, *args, **kwargs):
         self.player.next()
 
 
