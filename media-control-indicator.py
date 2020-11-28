@@ -75,7 +75,7 @@ class MediaControlIndicator(Gtk.Application):
 
     def player_handler(self):
         try:
-            self.player.on('metadata', self.update_album_art)
+            self.player.connect('metadata', self.update_album_art)
         except GLib.Error:
             self.menu.set_size_request(0, 0)
             self.menu.reposition()
