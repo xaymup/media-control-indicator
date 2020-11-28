@@ -88,14 +88,15 @@ class media_control_indicator (Gtk.Application):
             self.indicator.set_icon('media-playback-stop')
         return GLib.SOURCE_CONTINUE
 
-    def update_album_art(self, args, widget):
+    def update_album_art(self, *args, **kwargs):
         self.getalbumartThread = threading.Thread(target=self.get_album_art)
         self.getalbumartThread.start()
 
     def get_album_art(self):
         try:
             self.albumartData = urllib \
-                .request.urlopen(self.player.props.metadata['mpris:artUrl']).read()
+                .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
+                .read()
             self.setbgThread = threading.Thread(target=self.set_bg)
             self.setalbumartThread = threading.Thread(target=self.set_albumart)
             self.setbgThread.start()
@@ -181,13 +182,13 @@ class media_control_indicator (Gtk.Application):
             self.albumartItem.hide()
         return GLib.SOURCE_CONTINUE
 
-    def mediaPlay(self, Widget):
+    def mediaPlay(self, *args, **kwargs):
         self.player.play_pause()
 
-    def mediaPrevious(self, Widget):
+    def mediaPrevious(self, *args, **kwargs):
         self.player.previous()
 
-    def mediaNext(self, Widget):
+    def mediaNext(self, *args, **kwargs):
         self.player.next()
 
 if __name__ == '__main__':
