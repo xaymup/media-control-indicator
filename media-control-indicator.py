@@ -195,5 +195,4 @@ class MediaControlIndicator(Gtk.Application):
 
 
 if __name__ == '__main__':
-    imc = MediaControlIndicator()
-    imc.main()
+    MediaControlIndicator()
