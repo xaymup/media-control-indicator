@@ -1,159 +1,204 @@
 #!/usr/bin/python
 # Author: Mohamed Alaa <m-alaa8@ubuntu.com>
-from colorthief import ColorThief
-import io
-from gi.repository import Gtk, AppIndicator3, Gdk, Gio, GLib, Playerctl
-from gi.repository.GdkPixbuf import Pixbuf,  InterpType
-import urllib.request
-import threading
 import gc
+import io
+import threading
+import urllib.request
 
-class media_control_indicator (Gtk.Application):
-    def __init__ (self):
-        self.indicator = AppIndicator3.Indicator.new("media_control_indicator", "/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png", AppIndicator3.IndicatorCategory.SYSTEM_SERVICES)
+import gi
+from colorthief import ColorThief
+
+gi.require_version('Gtk', '3.0')
+gi.require_version('AppIndicator3', '0.1')
+gi.require_version('Playerctl', '2.0')
+
+from gi.repository import AppIndicator3, Gdk, Gio, GLib, Gtk, Playerctl
+from gi.repository.GdkPixbuf import InterpType, Pixbuf
+
+
+class MediaControlIndicator(Gtk.Application):
+    def __init__(self):
+        self.status = None
+        self.albumart_data = None
+
+        self.indicator = AppIndicator3.Indicator.new(
+            'media_control_indicator',
+            'media-playback-stop',
+            AppIndicator3.IndicatorCategory.SYSTEM_SERVICES,
+        )
         self.indicator.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
-        
+
         self.menu = Gtk.Menu()
         self.indicator.set_menu(self.menu)
-        
-        self.albumartItem = Gtk.MenuItem()
-        self.npItem = Gtk.MenuItem()
-        self.playButton = Gtk.ImageMenuItem("Play",image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
-        self.previousButton = Gtk.ImageMenuItem("Previous",image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS))
-        self.nextButton = Gtk.ImageMenuItem("Next",image=Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT))
-        
-        self.playButton.connect('activate',self.mediaPlay)
-        self.previousButton.connect('activate',self.mediaPrevious)
-        self.nextButton.connect('activate',self.mediaNext)
-        
-        self.albumArt = Gtk.Image()
-        self.albumartItem.add(self.albumArt)
-        
+
+        self.albumart_item = Gtk.MenuItem()
+        self.np_item = Gtk.MenuItem()
+        self.play_button = Gtk.ImageMenuItem(
+            label='Play',
+            image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
+        self.previous_button = Gtk.ImageMenuItem(
+            label='Previous',
+            image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS),
+        )
+        self.next_button = Gtk.ImageMenuItem(
+            label='Next',
+            image=Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT),
+        )
+
+        self.play_button.connect('activate', self.media_play)
+        self.previous_button.connect('activate', self.media_previous)
+        self.next_button.connect('activate', self.media_next)
+
+        # Toggle play / pause on middle click
+        self.indicator.set_secondary_activate_target(self.play_button)
+
+        self.album_art = Gtk.Image()
+        self.albumart_item.add(self.album_art)
+
         self.player = Playerctl.Player()
-                
-        self.menu.append(self.albumartItem)
-        self.menu.append(self.npItem)
-        self.menu.append(self.playButton)
-        self.menu.append(self.previousButton)
-        self.menu.append(self.nextButton)
-        
-        GLib.timeout_add_seconds(1,self.set_np)
-        GLib.timeout_add_seconds(1,self.set_icon)
-        GLib.timeout_add_seconds(1,self.set_buttons)
-        GLib.timeout_add_seconds(1,self.player_handler)
-        GLib.timeout_add_seconds(30,self.collect_garbage)
-        
+
+        self.menu.append(self.albumart_item)
+        self.menu.append(self.np_item)
+        self.menu.append(self.play_button)
+        self.menu.append(self.previous_button)
+        self.menu.append(self.next_button)
+
+        GLib.timeout_add_seconds(1, self.set_np)
+        GLib.timeout_add_seconds(1, self.set_icon)
+        GLib.timeout_add_seconds(1, self.set_buttons)
+        GLib.timeout_add_seconds(1, self.player_handler)
+        GLib.timeout_add_seconds(30, self.collect_garbage)
+
         self.update_album_art(None, None)
-        
+
         self.menu.show_all()
         Gtk.main()
 
-    def collect_garbage(self):
+    @staticmethod
+    def collect_garbage():
         gc.collect()
         return GLib.SOURCE_CONTINUE
-        
+
     def player_handler(self):
         try:
-            self.player.on('metadata',self.update_album_art)
+            self.player.connect('metadata', self.update_album_art)
         except GLib.Error:
-            self.menu.set_size_request(0,0)
+            self.menu.set_size_request(0, 0)
             self.menu.reposition()
-            pass
         return GLib.SOURCE_CONTINUE
-    
+
     def set_icon(self):
-        self.status = self.player.get_property("status")
-        if self.status == "Playing":
-            self.indicator.set_icon("/usr/share/icons/Adwaita/32x32/actions/media-playback-start.png")
-        elif self.status == "Paused":
-            self.indicator.set_icon("/usr/share/icons/Adwaita/32x32/actions/media-playback-pause.png")
-        else: 
-            self.indicator.set_icon("/usr/share/icons/Adwaita/32x32/actions/media-playback-stop.png")
+        self.status = self.player.get_property('status')
+        if self.status == 'Playing':
+            self.indicator.set_icon_full('media-playback-start', 'Playing')
+        elif self.status == 'Paused':
+            self.indicator.set_icon_full('media-playback-pause', 'Paused')
+        else:
+            self.indicator.set_icon_full('media-playback-stop', 'Stopped')
         return GLib.SOURCE_CONTINUE
-    
-    def update_album_art(self, args, widget):
-        self.getalbumartThread = threading.Thread(target=self.get_album_art)
-        self.getalbumartThread.start()        
-        
+
+    def update_album_art(self, *args, **kwargs):
+        threading.Thread(target=self.get_album_art).start()
+
     def get_album_art(self):
         try:
-            self.albumartData = urllib.request.urlopen(self.player.props.metadata["mpris:artUrl"]).read()
-            self.setbgThread = threading.Thread(target=self.set_bg)
-            self.setalbumartThread = threading.Thread(target=self.set_albumart)
-            self.setbgThread.start()
-            self.setalbumartThread.start()
-            self.albumartItem.show()
-        except (TypeError, KeyError, urllib.request.URLError) as e:
-            self.albumartItem.hide()
+            self.albumart_data = urllib \
+                .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
+                .read()
+            threading.Thread(target=self.set_bg).start()
+            threading.Thread(target=self.set_albumart).start()
+            self.albumart_item.show()
+        except (TypeError, KeyError, urllib.request.URLError):
+            self.albumart_item.hide()
 
     def set_albumart(self):
-        inputStream = Gio.MemoryInputStream.new_from_data(self.albumartData, None) 
+        inputStream = Gio.MemoryInputStream \
+            .new_from_data(self.albumart_data, None)
         pixbuf = Pixbuf.new_from_stream(inputStream, None)
         pixbuf = pixbuf.scale_simple(180, 180, InterpType.BILINEAR)
         GLib.idle_add(self.apply_albumart, pixbuf)
-        
+
     def apply_albumart(self, pixbuf):
-        self.albumArt.set_from_pixbuf(pixbuf)
-        self.menu.set_size_request(0,320)
+        self.album_art.set_from_pixbuf(pixbuf)
+        self.menu.set_size_request(0, 320)
         self.menu.reposition()
         return False
 
     def set_bg(self):
-        self.albumartStream=io.BytesIO(self.albumartData)
-        dominantColor = ColorThief(self.albumartStream).get_color(quality=1)
-        color2 = Gdk.RGBA(red = (dominantColor[0])/255*1, green = (dominantColor[1])/255*1, blue = (dominantColor[2])/255*1, alpha =1)
-        color = Gdk.RGBA(red = (dominantColor[0])/255*1, green = (dominantColor[1])/255*1, blue = (dominantColor[2])/255*1, alpha =0.5)
+        albumartStream = io.BytesIO(self.albumart_data)
+        dominantColor = ColorThief(albumartStream).get_color(quality=1)
+        color2 = Gdk.RGBA(
+            red=(dominantColor[0]) / 255 * 1,
+            green=(dominantColor[1]) / 255 * 1,
+            blue=(dominantColor[2]) / 255 * 1,
+            alpha=1,
+        )
+        color = Gdk.RGBA(
+            red=(dominantColor[0]) / 255 * 1,
+            green=(dominantColor[1]) / 255 * 1,
+            blue=(dominantColor[2]) / 255 * 1,
+            alpha=0.5,
+        )
         GLib.idle_add(self.apply_bg, color, color2)
-        
+
     def apply_bg(self, color, color2):
-        self.npItem.override_background_color(Gtk.StateFlags.NORMAL, color)
-        self.albumartItem.override_background_color(Gtk.StateFlags.NORMAL, color2)
+        self.np_item.override_background_color(Gtk.StateFlags.NORMAL, color)
+        self.albumart_item.override_background_color(
+            Gtk.StateFlags.NORMAL,
+            color2,
+        )
 
     def set_np(self):
         try:
-            self.npItem.set_label("%s\n%s\n%s" % (self.player.get_title(),self.player.get_album(),self.player.get_artist()))
-            if self.npItem.get_label().isspace() == False:
-                self.npItem.show()
+            self.np_item.set_label('%s\n%s\n%s' % (
+                self.player.get_title(),
+                self.player.get_album(),
+                self.player.get_artist(),
+            ))
+            if not self.np_item.get_label().isspace():
+                self.np_item.show()
             else:
-                self.npItem.hide()
-                self.menu.set_size_request(0,0)
+                self.np_item.hide()
+                self.menu.set_size_request(0, 0)
                 self.menu.reposition()
         except GLib.Error:
             pass
         return GLib.SOURCE_CONTINUE
-        
+
     def set_buttons(self):
         self.player = Playerctl.Player()
-        self.status = self.player.get_property("status")
-        if self.status == "Playing":
-            self.playButton.set_sensitive(True)
-            self.nextButton.set_sensitive(True)
-            self.previousButton.set_sensitive(True)
-            self.playButton.set_label("Pause")
-            self.playButton.set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE))
-        elif self.status == "Paused":
-            self.playButton.set_sensitive(True)
-            self.nextButton.set_sensitive(True)
-            self.previousButton.set_sensitive(True)
-            self.playButton.set_label("Play")
-            self.playButton.set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
-        else: 
-            self.playButton.set_sensitive(False)
-            self.nextButton.set_sensitive(False)
-            self.previousButton.set_sensitive(False)
-            self.npItem.hide()
-            self.albumartItem.hide()
+        self.status = self.player.get_property('status')
+        if self.status == 'Playing':
+            self.play_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.previous_button.set_sensitive(True)
+            self.play_button.set_label('Pause')
+            self.play_button \
+                .set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PAUSE))
+        elif self.status == 'Paused':
+            self.play_button.set_sensitive(True)
+            self.next_button.set_sensitive(True)
+            self.previous_button.set_sensitive(True)
+            self.play_button.set_label('Play')
+            self.play_button \
+                .set_image(image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
+        else:
+            self.play_button.set_sensitive(False)
+            self.next_button.set_sensitive(False)
+            self.previous_button.set_sensitive(False)
+            self.np_item.hide()
+            self.albumart_item.hide()
         return GLib.SOURCE_CONTINUE
-        
-    def mediaPlay(self, Widget):
+
+    def media_play(self, *args, **kwargs):
         self.player.play_pause()
-        
-    def mediaPrevious(self, Widget):
+
+    def media_previous(self, *args, **kwargs):
         self.player.previous()
-        
-    def mediaNext(self, Widget):
+
+    def media_next(self, *args, **kwargs):
         self.player.next()
-        
-if __name__ == "__main__":
-    imc = media_control_indicator()
-    imc.main()
+
+
+if __name__ == '__main__':
+    MediaControlIndicator()
