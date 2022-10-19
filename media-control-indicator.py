@@ -8,6 +8,8 @@ import urllib.request
 import gi
 from colorthief import ColorThief
 
+from PIL import Image
+
 gi.require_version('Gtk', '3.0')
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Playerctl', '2.0')
@@ -115,7 +117,10 @@ class MediaControlIndicator(Gtk.Application):
         inputStream = Gio.MemoryInputStream \
             .new_from_data(self.albumart_data, None)
         pixbuf = Pixbuf.new_from_stream(inputStream, None)
-        pixbuf = pixbuf.scale_simple(180, 180, InterpType.BILINEAR)
+
+        file = self.player.props.metadata['mpris:artUrl'][7:]
+        w, h = Image.open(file).size
+        pixbuf = pixbuf.scale_simple(180 * w / h, 180, InterpType.BILINEAR)
         GLib.idle_add(self.apply_albumart, pixbuf)
 
     def apply_albumart(self, pixbuf):
