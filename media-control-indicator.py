@@ -104,12 +104,15 @@ class MediaControlIndicator(Gtk.Application):
 
     def get_album_art(self):
         try:
-            self.albumart_data = urllib \
-                .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
-                .read()
-            threading.Thread(target=self.set_bg).start()
-            threading.Thread(target=self.set_albumart).start()
-            self.albumart_item.show()
+            self.status = self.player.get_property('status')
+            print(self.status)
+            if(self.status == 'Playing' or self.status == 'Paused' or self.status == 'Stopped'):
+                self.albumart_data = urllib \
+                    .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
+                    .read()
+                threading.Thread(target=self.set_bg).start()
+                threading.Thread(target=self.set_albumart).start()
+                self.albumart_item.show()
         except (TypeError, KeyError, urllib.request.URLError):
             self.albumart_item.hide()
 
