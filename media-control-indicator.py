@@ -113,6 +113,8 @@ class MediaControlIndicator(Gtk.Application):
                 threading.Thread(target=self.set_bg).start()
                 threading.Thread(target=self.set_albumart).start()
                 self.albumart_item.show()
+            else:
+                self.albumart_item.hide()
         except (TypeError, KeyError, urllib.request.URLError):
             self.albumart_item.hide()
 
