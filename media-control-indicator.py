@@ -105,8 +105,8 @@ class MediaControlIndicator(Gtk.Application):
     def get_album_art(self):
         try:
             self.status = self.player.get_property('status')
-            print(self.status)
-            if(self.status == 'Playing' or self.status == 'Paused' or self.status == 'Stopped'):
+            print(self.player.props.metadata['mpris:artUrl'])
+            if(self.player.props.metadata['mpris:artUrl'][0] == "f"):
                 self.albumart_data = urllib \
                     .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
                     .read()
