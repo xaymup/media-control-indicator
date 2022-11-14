@@ -104,12 +104,18 @@ class MediaControlIndicator(Gtk.Application):
 
     def get_album_art(self):
         try:
-            self.albumart_data = urllib \
-                .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
-                .read()
-            threading.Thread(target=self.set_bg).start()
-            threading.Thread(target=self.set_albumart).start()
-            self.albumart_item.show()
+            self.status = self.player.get_property('status')
+#            print(self.player.props)
+            if(self.status):
+#            print(self.player.props.metadata['mpris:artUrl'])
+                self.albumart_data = urllib \
+                    .request.urlopen(self.player.props.metadata['mpris:artUrl']) \
+                    .read()
+                threading.Thread(target=self.set_bg).start()
+                threading.Thread(target=self.set_albumart).start()
+                self.albumart_item.show()
+            else:
+                self.albumart_item.hide()
         except (TypeError, KeyError, urllib.request.URLError):
             self.albumart_item.hide()
 
