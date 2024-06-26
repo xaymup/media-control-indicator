@@ -38,20 +38,25 @@ class MediaControlIndicator(Gtk.Application):
         self.play_button = Gtk.ImageMenuItem(
             label='Play',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PLAY))
-        self.previous_button = Gtk.ImageMenuItem(
-            label='Previous',
-            image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS),
-        )
         self.next_button = Gtk.ImageMenuItem(
             label='Next',
             image=Gtk.Image(stock=Gtk.STOCK_MEDIA_NEXT),
         )
+        self.previous_button = Gtk.ImageMenuItem(
+            label='Previous',
+            image=Gtk.Image(stock=Gtk.STOCK_MEDIA_PREVIOUS),
+        )
+        self.quit_button = Gtk.ImageMenuItem(
+            label='Quit',
+            image=Gtk.Image(stock=Gtk.STOCK_QUIT),
+        )
 
         self.play_button.connect('activate', self.media_play)
-        self.previous_button.connect('activate', self.media_previous)
         self.next_button.connect('activate', self.media_next)
+        self.previous_button.connect('activate', self.media_previous)
+        self.quit_button.connect('activate', self.quit)  # connect quit button
 
-        # Toggle play / pause on middle click
+        # toggle play / pause on middle click
         self.indicator.set_secondary_activate_target(self.play_button)
 
         self.album_art = Gtk.Image()
@@ -62,8 +67,9 @@ class MediaControlIndicator(Gtk.Application):
         self.menu.append(self.albumart_item)
         self.menu.append(self.np_item)
         self.menu.append(self.play_button)
-        self.menu.append(self.previous_button)
         self.menu.append(self.next_button)
+        self.menu.append(self.previous_button)
+        self.menu.append(self.quit_button)
 
         GLib.timeout_add_seconds(1, self.set_np)
         GLib.timeout_add_seconds(1, self.set_icon)
@@ -209,6 +215,9 @@ class MediaControlIndicator(Gtk.Application):
 
     def media_next(self, *args, **kwargs):
         self.player.next()
+
+    def quit(self, *args, **kwargs):  # quit method
+        Gtk.main_quit()
 
 
 if __name__ == '__main__':
